@@ -1,6 +1,7 @@
 -- Game constants
 local pipe_x, top_pipe_height, gap_height, pipe_width
-local birdY, gravity, birdX, bird_width, bird_height
+local birdY, gravity, birdX, bird_width, bird_height, scale
+local bird_image
 local levels_passed = 1.0
 local difficulty = 0.5
 local game_over = false
@@ -9,12 +10,24 @@ function love.load()
     -- Background color
     love.graphics.setBackgroundColor(1, 1, 1) -- White background
 
+    background_image = love.graphics.newImage("background.png") -- Path to your PNG file
+
+    love.graphics.setBackgroundColor(1, 1, 1) -- White fallback
+
     -- Bird properties
     birdX = 62
     birdY = 200
-    bird_width = 30
-    bird_height = 25
     gravity = 100
+
+    -- Load the bird image
+    bird_image = love.graphics.newImage("frame-1.png") -- Path to your PNG file
+    
+    -- Scale factor for the large image
+    scale = 0.1 -- Shrink the image to 10% of its original size
+
+    -- Adjust collision box based on scaled image dimensions
+    bird_width = bird_image:getWidth() * scale
+    bird_height = bird_image:getHeight() * scale
 
     -- Pipe properties
     pipe_x = love.graphics.getWidth() -- Start off-screen
@@ -47,14 +60,17 @@ end
 
 function love.keypressed(key)
     -- Bird jump logic
-    if key == "space" and not game_over then
+    if key == "up" and not game_over then
         birdY = birdY - 70
     end
 
-    if key == "d" and not game_over then 
+    if key == "down" and not game_over then 
 	    birdY = birdY + 70
     end
 
+    if key == "right" and not game_over then
+	    pipe_x = pipe_x - 20
+    end
 
     -- Restart the game after game over
     if key == "r" and game_over then
@@ -68,12 +84,18 @@ function love.keypressed(key)
 end
 
 function love.draw()
-    -- Draw the bird
-    love.graphics.setColor(0.87, 0.84, 0.27) -- Yellowish color
-    love.graphics.rectangle('fill', birdX, birdY, bird_width, bird_height)
+    -- Draw the background image at the top-left corner (0, 0)
+    love.graphics.setColor(1, 1, 1) -- Reset color to white
+    love.graphics.draw(background_image, 0, 0, 0, 
+                       love.graphics.getWidth() / background_image:getWidth(),
+                       love.graphics.getHeight() / background_image:getHeight())
+
+    -- Draw the bird (scaled)
+    love.graphics.setColor(1, 1, 1) -- Ensure no color tint
+    love.graphics.draw(bird_image, birdX, birdY, 0, scale, scale)
 
     -- Draw the pipes
-    love.graphics.setColor(120 / 255, 33 / 255, 123 / 255) -- Purple color
+    love.graphics.setColor(0, 0, 0)
 
     -- Top pipe
     love.graphics.rectangle('fill', pipe_x, 0, pipe_width, top_pipe_height)
@@ -82,10 +104,16 @@ function love.draw()
     local bottom_pipe_y = top_pipe_height + gap_height
     love.graphics.rectangle('fill', pipe_x, bottom_pipe_y, pipe_width, love.graphics.getHeight() - bottom_pipe_y)
 
+    -- Reset color back to white after drawing pipes
+    love.graphics.setColor(1, 1, 1)
+
     -- Game over message
     if game_over then
         love.graphics.setColor(1, 0, 0) -- Red color
-        love.graphics.printf("Game Over! Press R to restart. You're score was: " .. levels_passed * 10, 0, love.graphics.getHeight() / 2, love.graphics.getWidth(), "center")
+        love.graphics.printf("Game Over! Press R to restart", 0, love.graphics.getHeight() / 2, love.graphics.getWidth(), "center")
+        
+        -- Reset color after game over text
+        love.graphics.setColor(1, 1, 1)
     end
 end
 
